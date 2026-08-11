@@ -1,0 +1,16 @@
+# Environment variables
+.env
+*.env
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Persistent stack data (if cloned locally)
+data/
+cache/
+config/
+db/
+media/
+/opt/torbox-stack
+/mnt/torbox

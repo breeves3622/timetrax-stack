@@ -1,0 +1,89 @@
+version: "3.8"
+
+networks:
+  torbox-net:
+    name: torbox-net
+    driver: bridge
+
+services:
+  # ==========================================
+  # 1. Jellyfin - Netflix-Style UI & Player
+  # ==========================================
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    user: "${PUID:-1000}:${PGID:-1000}"
+    ports:
+      - "${JELLYFIN_PORT:-8096}:8096"
+    environment:
+      - TZ=${TZ:-UTC}
+      - JELLYFIN_PublishedServerUrl=http://${SERVER_IP:-localhost}:${JELLYFIN_PORT:-8096}
+    volumes:
+      - ${DATA_DIR:-/opt/torbox-stack}/jellyfin/config:/config
+      - ${DATA_DIR:-/opt/torbox-stack}/jellyfin/cache:/cache
+      - ${MEDIA_DIR:-/mnt/torbox/media}:/data/media:ro
+    networks:
+      - torbox-net
+    restart: unless-stopped
+
+  # ==========================================
+  # 2. Jellyseerr - Netflix Discovery & Request Frontend
+  # ==========================================
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    ports:
+      - "${JELLYSEERR_PORT:-5055}:5055"
+    environment:
+      - LOG_LEVEL=info
+      - TZ=${TZ:-UTC}
+    volumes:
+      - ${DATA_DIR:-/opt/torbox-stack}/jellyseerr/config:/app/config
+    networks:
+      - torbox-net
+    depends_on:
+      - jellyfin
+    restart: unless-stopped
+
+  # ==========================================
+  # 3. Riven - TorBox Debrid Mount & Scraper Engine
+  # ==========================================
+  riven:
+    image: spoked/riven:latest
+    container_name: riven
+    cap_add:
+      - SYS_ADMIN
+    devices:
+      - /dev/fuse:/dev/fuse
+    security_opt:
+      - apparmor:unconfined
+    ports:
+      - "${RIVEN_PORT:-8080}:8080"
+    environment:
+      - TZ=${TZ:-UTC}
+      - RIVEN_DATABASE_URL=postgres://riven:${POSTGRES_PASSWORD:-rivenpass}@riven-db:5432/riven
+      - RIVEN_TORBOX_API_KEY=${TORBOX_API_KEY:-}
+    volumes:
+      - ${DATA_DIR:-/opt/torbox-stack}/riven/data:/riven/data
+      - ${MEDIA_DIR:-/mnt/torbox/media}:${MEDIA_DIR:-/mnt/torbox/media}:rshared
+    networks:
+      - torbox-net
+    depends_on:
+      - riven-db
+    restart: unless-stopped
+
+  # ==========================================
+  # 4. Riven Database
+  # ==========================================
+  riven-db:
+    image: postgres:16-alpine
+    container_name: riven-db
+    environment:
+      - POSTGRES_USER=riven
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-rivenpass}
+      - POSTGRES_DB=riven
+    volumes:
+      - ${DATA_DIR:-/opt/torbox-stack}/riven/db:/var/lib/postgresql/data
+    networks:
+      - torbox-net
+    restart: unless-stopped
