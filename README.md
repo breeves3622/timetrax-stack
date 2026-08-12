@@ -48,24 +48,23 @@ A production-ready, containerized **TimeTrax Host Application** with real-time *
 
 ---
 
-## 🐙 Step 1: Push Code to Your GitHub Account (`breeves3622`)
+## 🐙 Step 1: Create & Push Repository to GitHub (`breeves3622`)
 
-Run the following commands in your terminal to push this project to your GitHub account:
+Before Portainer can pull your code via Git, the repository must exist on GitHub and have the code pushed:
 
-```bash
-# 1. Connect remote repository for breeves3622 (e.g. timetrax-stack)
-git remote add origin https://github.com/breeves3622/timetrax-stack.git
-
-# 2. Set default branch to main
-git branch -M main
-
-# 3. Push all commits to GitHub
-git push -u origin main
-```
+1. Go to [https://github.new](https://github.new) and create a repository named **`timetrax-stack`**.
+2. Run these commands in your local workspace terminal:
+   ```bash
+   git remote add origin https://github.com/breeves3622/timetrax-stack.git
+   git branch -M main
+   git push -u origin main
+   ```
 
 ---
 
 ## 🐳 Step 2: Deploying in Portainer Stacks
+
+### Option A: Via Git Repository (Recommended)
 
 1. Open **Portainer** -> **Stacks** -> **+ Add stack**.
 2. **Name**: `timetrax-stack`.
@@ -74,8 +73,11 @@ git push -u origin main
    - **Repository URL**: `https://github.com/breeves3622/timetrax-stack.git`
    - **Repository reference**: `refs/heads/main`
    - **Compose path**: `docker-compose.yml`
-5. **Environment variables**:
-   Click **+ Add environment variable** for each parameter:
+5. **Authentication** *(Only required if repository is set to Private)*:
+   - Toggle **Authentication** ON
+   - **Username**: `breeves3622`
+   - **Personal Access Token**: Paste your GitHub PAT token
+6. **Environment variables**:
    | Key | Value | Description |
    |---|---|---|
    | `TIMETRAX_PORT` | `3000` | Port for TimeTrax Host Web UI |
@@ -86,10 +88,18 @@ git push -u origin main
    | `DATA_DIR` | `/opt/timetrax/data` | Host persistent directory for TimeTrax |
    | `NTFY_DATA_DIR` | `/opt/timetrax/ntfy` | Host persistent directory for ntfy |
 
-6. Click **Deploy the stack**.
+7. Click **Deploy the stack**.
 
-> [!TIP]
-> Portainer will pull directly from `github.com/breeves3622/timetrax-stack`, compile the `Dockerfile` into the `timetrax-host` container, and start `ntfy` on the `timetrax-net` bridge network!
+---
+
+### Option B: Via Portainer Web Editor (Instant Deployment)
+
+1. Open **Portainer** -> **Stacks** -> **+ Add stack**.
+2. **Name**: `timetrax-stack`.
+3. Select **Web editor** as the build method.
+4. Copy the contents of [`docker-compose.yml`](docker-compose.yml) into the editor.
+5. Add the Environment variables listed above.
+6. Click **Deploy the stack**.
 
 ---
 
