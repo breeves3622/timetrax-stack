@@ -15,7 +15,7 @@ A production-ready, containerized **TimeTrax Host Application** with real-time *
 - 📱 **Mobile & Desktop Push Alerts**: Subscribe to your ntfy topic on iOS, Android, or browser to receive alerts with priority levels and custom tags (`alarm_clock`, `coffee`, `stopwatch`).
 - 🏠 **Self-Hosted ntfy Included**: Includes a pre-configured `binwiederhier/ntfy` container in Docker Compose (or connect to `https://ntfy.sh`).
 - ⚡ **Live Webhook Tester**: Test button in the Web UI to verify endpoint delivery instantly.
-- 🐳 **Portainer & GitHub Ready**: Deployable directly as a Portainer Stack linked to your GitHub repository.
+- 🐳 **Portainer & GitHub Ready**: Pre-configured for deployment as a Portainer Stack under GitHub user **breeves3622**.
 
 ---
 
@@ -43,42 +43,36 @@ A production-ready, containerized **TimeTrax Host Application** with real-time *
 ┌────────────────────────────────────────────────────────┐
 │                   USER DEVICES                         │
 │     ntfy Mobile App (iOS/Android) / Desktop / Web      │
-└──────────────────────────?─────────────────────────────┘
+└──────────────────────────┬─────────────────────────────┘
 ```
 
 ---
 
-## 🐙 Step 1: Push Code to Your GitHub Repository
+## 🐙 Step 1: Push Code to Your GitHub Account (`breeves3622`)
 
-Run the following commands in your local workspace terminal:
+Run the following commands in your terminal to push this project to your GitHub account:
 
 ```bash
-# 1. Add all project files
-git add .
+# 1. Connect remote repository for breeves3622 (e.g. timetrax-stack)
+git remote add origin https://github.com/breeves3622/timetrax-stack.git
 
-# 2. Commit the changes
-git commit -m "Setup TimeTrax Host with self-hosted ntfy stack"
-
-# 3. Rename branch to main (if preferred)
+# 2. Set default branch to main
 git branch -M main
 
-# 4. Connect your GitHub remote repository (replace with your GitHub URL)
-git remote add origin https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME.git
-
-# 5. Push to GitHub
+# 3. Push all commits to GitHub
 git push -u origin main
 ```
 
 ---
 
-## 🐳 Step 2: Deploying via Portainer Stacks
+## 🐳 Step 2: Deploying in Portainer Stacks
 
 1. Open **Portainer** -> **Stacks** -> **+ Add stack**.
 2. **Name**: `timetrax-stack`.
 3. **Build Method**: Select **Repository**.
 4. **Repository Details**:
-   - **Repository URL**: `https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME.git`
-   - **Repository reference**: `refs/heads/main` (or `refs/heads/master`)
+   - **Repository URL**: `https://github.com/breeves3622/timetrax-stack.git`
+   - **Repository reference**: `refs/heads/main`
    - **Compose path**: `docker-compose.yml`
 5. **Environment variables**:
    Click **+ Add environment variable** for each parameter:
@@ -95,7 +89,7 @@ git push -u origin main
 6. Click **Deploy the stack**.
 
 > [!TIP]
-> Portainer will clone your GitHub repository, automatically build the `timetrax-host` Docker container from the `Dockerfile`, spin up the `ntfy` container, and attach them on the `timetrax-net` bridge network!
+> Portainer will pull directly from `github.com/breeves3622/timetrax-stack`, compile the `Dockerfile` into the `timetrax-host` container, and start `ntfy` on the `timetrax-net` bridge network!
 
 ---
 
