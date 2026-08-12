@@ -20,11 +20,13 @@ until php -r "
 done
 echo "✅ Database connection established!"
 
-# Ensure web interface symlinks for html5 routing
-if [ -d "/var/www/html/interface/html5" ]; then
-    ln -sf /var/www/html/interface/html5 /var/www/html/html5
-elif [ -d "/var/www/html/interface" ]; then
-    ln -sf /var/www/html/interface /var/www/html/html5
+# Create interface symlinks for web installer and HTML5 UI
+if [ -d "/var/www/html/interface" ]; then
+    ln -sf /var/www/html/interface /var/www/html/html5 2>/dev/null || true
+    ln -sf /var/www/html/interface/install /var/www/html/install 2>/dev/null || true
+    if [ -d "/var/www/html/interface/html5" ]; then
+        ln -sf /var/www/html/interface/html5 /var/www/html/html5 2>/dev/null || true
+    fi
 fi
 
 # Ensure storage directory permissions
@@ -62,5 +64,23 @@ EOF
 
 chown www-data:www-data "$INI_FILE"
 cp "$INI_FILE" /var/www/html/includes/timetrex.ini.php 2>/dev/null || true
+
+# Check if PostgreSQL database tables exist
+HAS_TABLES=$(php -r "
+  \$conn = @pg_connect('host=${DB_HOST} port=${DB_PORT} dbname=${DB_NAME} user=${DB_USER} password=${DB_PASS}');
+  if (\$conn) {
+    \$res = @pg_query(\$conn, \"SELECT to_regclass('public.system_setting')\");
+    if (\$res) {
+      \$row = pg_fetch_row(\$res);
+      if (!empty(\$row[0])) { echo 'YES'; exit(0); }
+    }
+  }
+  echo 'NO';
+")
+
+if [ "$HAS_TABLES" = "NO" ]; then
+    echo "⚠️ PostgreSQL database '${DB_NAME}' tables are not initialized yet!"
+    echo "👉 Please navigate to http://<YOUR_SERVER_IP>:8090/interface/install/install.php in your web browser to run the TimeTrex Setup Wizard."
+fi
 
 exec "$@"
