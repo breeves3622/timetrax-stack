@@ -9,7 +9,7 @@ DB_NAME="${TIMETREX_DB_NAME:-timetrex}"
 DB_USER="${TIMETREX_DB_USER:-timetrex}"
 DB_PASS="${TIMETREX_DB_PASSWORD:-timetrexpass}"
 
-# Wait for PostgreSQL database to be ready
+# Wait for PostgreSQL database connection
 echo "⌛ Waiting for PostgreSQL database connection (${DB_HOST}:${DB_PORT})..."
 until php -r "
   \$conn = @pg_connect('host=${DB_HOST} port=${DB_PORT} dbname=${DB_NAME} user=${DB_USER} password=${DB_PASS}');
@@ -20,7 +20,15 @@ until php -r "
 done
 echo "✅ Database connection established!"
 
-# Ensure permissions
+# Ensure web interface symlinks for html5 routing
+if [ -d "/var/www/html/interface/html5" ]; then
+    ln -sf /var/www/html/interface/html5 /var/www/html/html5
+elif [ -d "/var/www/html/interface" ]; then
+    ln -sf /var/www/html/interface /var/www/html/html5
+fi
+
+# Ensure storage directory permissions
+mkdir -p /var/www/html/storage/storage /var/www/html/storage/logs
 chown -R www-data:www-data /var/www/html/storage /var/www/html/includes 2>/dev/null || true
 
 # Generate timetrex.ini.php configuration
@@ -37,6 +45,7 @@ password = ${DB_PASS}
 port = ${DB_PORT}
 
 [path]
+base_url = /interface
 storage_dir = /var/www/html/storage
 log_dir = /var/www/html/storage/logs
 
