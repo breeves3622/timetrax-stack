@@ -18,11 +18,10 @@ echo "✅ Database connection established!"
 chown -R www-data:www-data /var/www/html/storage /var/www/html/includes 2>/dev/null || true
 
 # Generate timetrex.ini.php configuration if not present
-INI_FILE="/var/www/html/includes/timetrex.ini.php"
+INI_FILE="/var/www/html/timetrex.ini.php"
 if [ ! -f "$INI_FILE" ]; then
     echo "⚙️ Creating TimeTrex configuration file (timetrex.ini.php)..."
     cat <<EOF > "$INI_FILE"
-<?php
 [database]
 adapter = mysqli
 host = ${TIMETREX_DB_HOST:-timetrex-db}
@@ -40,6 +39,7 @@ ntfy_server_url = ${NTFY_SERVER_URL:-http://ntfy:8080}
 ntfy_topic = ${NTFY_TOPIC:-timetrax-alerts}
 EOF
     chown www-data:www-data "$INI_FILE"
+    cp "$INI_FILE" /var/www/html/includes/timetrex.ini.php 2>/dev/null || true
 fi
 
 exec "$@"
