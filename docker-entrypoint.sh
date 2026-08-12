@@ -3,6 +3,9 @@ set -e
 
 echo "🚀 Starting TimeTrex Community Edition..."
 
+# Set global environment variable for TimeTrex Config File
+export TIMETREX_CONFIG_FILE="/var/www/html/timetrex.ini.php"
+
 DB_HOST="${TIMETREX_DB_HOST:-timetrex-db}"
 DB_PORT="${TIMETREX_DB_PORT:-5432}"
 DB_NAME="${TIMETREX_DB_NAME:-timetrex}"
@@ -10,7 +13,7 @@ DB_USER="${TIMETREX_DB_USER:-timetrex}"
 DB_PASS="${TIMETREX_DB_PASSWORD:-timetrexpass}"
 
 # Wait for PostgreSQL database connection
-echo "⌛ Waiting for PostgreSQL database connection (${DB_HOST}:${DB_PORT})...."
+echo "⌛ Waiting for PostgreSQL database connection (${DB_HOST}:${DB_PORT})..."
 until php -r "
   \$conn = @pg_connect('host=${DB_HOST} port=${DB_PORT} dbname=${DB_NAME} user=${DB_USER} password=${DB_PASS}');
   if (\$conn) { exit(0); } else { exit(1); }

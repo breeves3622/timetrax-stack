@@ -1,5 +1,8 @@
 FROM php:8.0-apache
 
+# Set TimeTrex Config File environment variable globally for Web and CLI sub-processes
+ENV TIMETREX_CONFIG_FILE=/var/www/html/timetrex.ini.php
+
 # Install system dependencies & PostgreSQL development libraries
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
