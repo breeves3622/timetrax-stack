@@ -71,6 +71,15 @@ cache_dir = /var/www/storage/cache
 log_dir = /var/www/storage/logs
 php_cli = /usr/local/bin/php
 
+[cache]
+enable = TRUE
+dir = /var/www/storage/cache
+
+[logging]
+enable = TRUE
+log_dir = /var/www/storage/logs
+dir = /var/www/storage/logs
+
 [debug]
 production = FALSE
 enable = FALSE
