@@ -26,7 +26,7 @@ services:
       - NTFY_TOPIC=${NTFY_TOPIC:-timetrax-alerts}
       - TZ=${TZ:-America/New_York}
     volumes:
-      - ${DATA_DIR:-/opt/timetrax/timetrex}/storage:/var/www/html/storage
+      - ${DATA_DIR:-/opt/timetrax/timetrex}/storage:/var/www/storage
     networks:
       - timetrex-net
     depends_on:

@@ -57,8 +57,10 @@ RUN curl -sSL "https://github.com/aydancoskun/timetrex-community-edition/archive
     && rm -rf /tmp/timetrex* \
     && chown -R www-data:www-data /var/www/html
 
-# Create persistent storage directories
-RUN mkdir -p /var/www/html/storage/storage && chown -R www-data:www-data /var/www/html/storage
+# Create persistent storage, cache, and log directories OUTSIDE web root (/var/www/html)
+RUN mkdir -p /var/www/storage/storage /var/www/storage/cache /var/www/storage/logs \
+    && chown -R www-data:www-data /var/www/storage \
+    && chmod -R 777 /var/www/storage
 
 # Add entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/

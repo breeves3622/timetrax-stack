@@ -20,6 +20,9 @@ until php -r "
 done
 echo "✅ Database connection established!"
 
+# Ensure PHP CLI symlink exists
+ln -sf /usr/local/bin/php /usr/bin/php 2>/dev/null || true
+
 # Create interface symlinks for web installer and HTML5 UI
 if [ -d "/var/www/html/interface" ]; then
     ln -sf /var/www/html/interface /var/www/html/html5 2>/dev/null || true
@@ -29,11 +32,12 @@ if [ -d "/var/www/html/interface" ]; then
     fi
 fi
 
-# Ensure storage directory permissions
-mkdir -p /var/www/html/storage/storage /var/www/html/storage/logs
-chown -R www-data:www-data /var/www/html/storage /var/www/html/includes 2>/dev/null || true
+# Ensure storage, cache, and log directories OUTSIDE web root (/var/www/html) exist & are writable
+mkdir -p /var/www/storage/storage /var/www/storage/cache /var/www/storage/logs
+chown -R www-data:www-data /var/www/storage 2>/dev/null || true
+chmod -R 777 /var/www/storage 2>/dev/null || true
 
-# Generate timetrex.ini.php configuration with [other] installer_enabled = TRUE
+# Generate timetrex.ini.php configuration
 INI_FILE="/var/www/html/timetrex.ini.php"
 echo "⚙️ Writing TimeTrex configuration file (timetrex.ini.php)..."
 cat <<EOF > "$INI_FILE"
@@ -58,8 +62,10 @@ port = ${DB_PORT}
 
 [path]
 base_url = /interface
-storage_dir = /var/www/html/storage
-log_dir = /var/www/html/storage/logs
+storage_dir = /var/www/storage/storage
+cache_dir = /var/www/storage/cache
+log_dir = /var/www/storage/logs
+php_cli = /usr/local/bin/php
 
 [debug]
 production = FALSE
