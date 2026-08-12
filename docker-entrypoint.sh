@@ -34,6 +34,12 @@ port = ${TIMETREX_DB_PORT:-5432}
 storage_dir = /var/www/html/storage
 log_dir = /var/www/html/storage/logs
 
+[debug]
+production = TRUE
+enable = FALSE
+enable_display_errors = FALSE
+verbose = 0
+
 [webhook]
 ntfy_server_url = ${NTFY_SERVER_URL:-http://ntfy:8080}
 ntfy_topic = ${NTFY_TOPIC:-timetrax-alerts}

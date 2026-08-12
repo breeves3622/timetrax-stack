@@ -1,4 +1,4 @@
-FROM php:8.2-apache
+FROM php:8.0-apache
 
 # Install system dependencies & PostgreSQL development libraries
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -33,12 +33,16 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 # Enable Apache ModRewrite
 RUN a2enmod rewrite
 
-# Configure PHP settings for TimeTrex
+# Configure PHP settings for TimeTrex compatibility & error suppression
 RUN { \
     echo 'memory_limit = 512M'; \
     echo 'max_execution_time = 300'; \
     echo 'post_max_size = 100M'; \
     echo 'upload_max_filesize = 100M'; \
+    echo 'display_errors = Off'; \
+    echo 'display_startup_errors = Off'; \
+    echo 'log_errors = On'; \
+    echo 'error_reporting = E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED & ~E_WARNING'; \
     echo 'date.timezone = UTC'; \
 } > /usr/local/etc/php/conf.d/timetrex.ini
 
