@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TimeTrax Host | Time Tracking & ntfy Webhook Gateway</title>
+
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --bg-card: rgba(30, 41, 59, 0.7);
+      --bg-card-border: rgba(255, 255, 255, 0.1);
+      --accent-primary: #6366f1;
+      --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #3b82f6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
+      background-attachment: fixed;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--bg-card-border);
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: var(--accent-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.75rem;
+      font-weight: 700;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+
+    /* Grid Layout */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Card Component */
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--bg-card-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Status Indicator */
+    .status-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--bg-card-border);
+      margin-bottom: 1.25rem;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #64748b;
+      display: inline-block;
+      box-shadow: 0 0 10px #64748b;
+    }
+
+    .status-dot.active {
+      background: var(--success);
+      box-shadow: 0 0 12px var(--success);
+    }
+
+    .status-dot.break {
+      background: var(--warning);
+      box-shadow: 0 0 12px var(--warning);
+    }
+
+    .timer-display {
+      font-family: 'Outfit', monospace;
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #f1f5f9;
+      text-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+    }
+
+    /* Form Fields */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    input[type="text"], input[type="password"], select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent-primary);
+    }
+
+    /* Buttons */
+    .btn-group {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 0.85rem 1.25rem;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--accent-gradient);
+      color: white;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+    }
+
+    .btn-warning {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+
+    .btn-warning:hover {
+      background: rgba(245, 158, 11, 0.3);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border: 1px solid var(--bg-card-border);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Checkbox list */
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    .checkbox-label input {
+      accent-color: var(--accent-primary);
+    }
+
+    /* Table / Logs */
+    .logs-table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th {
+      padding: 0.75rem 1rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--bg-card-border);
+    }
+
+    td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .event-pill {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .event-pill.CLOCK_IN { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .event-pill.CLOCK_OUT { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    .event-pill.BREAK_START { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .event-pill.BREAK_END { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+
+    /* Toast Notification */
+    #toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      background: rgba(30, 41, 59, 0.95);
+      border: 1px solid var(--bg-card-border);
+      color: white;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transform: translateY(150%);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 1000;
+    }
+
+    #toast.show {
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="logo-container">
+        <div class="logo-icon">
+          <i data-lucide="clock"></i>
+        </div>
+        <div>
+          <h1>TimeTrax Host</h1>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Real-Time Time Tracking & ntfy Webhook Engine</p>
+        </div>
+      </div>
+      <div class="badge">
+        <i data-lucide="radio" style="width: 14px; height: 14px;"></i>
+        ntfy Connected
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- TIME TRACKER CARD -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i data-lucide="timer" style="color: var(--accent-primary);"></i>
+            Time Tracker
+          </div>
+          <span id="statusBadge" class="badge" style="background: rgba(100, 116, 139, 0.2); color: #94a3b8; border-color: rgba(100, 116, 139, 0.3);">
+            Clocked Out
+          </span>
+        </div>
+
+        <div class="status-banner">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+              <span id="statusDot" class="status-dot"></span>
+              <span id="statusText" style="font-weight: 600; font-size: 1rem;">Ready</span>
+            </div>
+            <p id="shiftDetails" style="font-size: 0.8rem; color: var(--text-muted);">No active shift</p>
+          </div>
+          <div id="timerDisplay" class="timer-display">00:00:00</div>
+        </div>
+
+        <form id="clockForm">
+          <div class="form-group">
+            <label for="userName">Employee / User</label>
+            <input type="text" id="userName" value="Developer" placeholder="Enter your name" required>
+          </div>
+          <div class="form-group">
+            <label for="projectName">Project / Task</label>
+            <input type="text" id="projectName" value="TimeTrax Integration" placeholder="e.g. Webhooks Setup">
+          </div>
+          <div class="form-group">
+            <label for="shiftNotes">Notes (Optional)</label>
+            <input type="text" id="shiftNotes" placeholder="Additional details...">
+          </div>
+
+          <div class="btn-group">
+            <button type="button" id="btnClockIn" class="btn btn-primary">
+              <i data-lucide="play"></i> Clock In
+            </button>
+            <button type="button" id="btnBreak" class="btn btn-warning" style="display: none;">
+              <i data-lucide="coffee"></i> Take Break
+            </button>
+            <button type="button" id="btnClockOut" class="btn btn-danger" style="display: none;">
+              <i data-lucide="square"></i> Clock Out
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- NTFY WEBHOOK CONFIG CARD -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i data-lucide="bell-ring" style="color: #a855f7;"></i>
+            ntfy Webhook Settings
+          </div>
+        </div>
+
+        <form id="settingsForm">
+          <div class="form-group">
+            <label for="ntfyServerUrl">ntfy Server URL</label>
+            <input type="text" id="ntfyServerUrl" placeholder="http://ntfy:8080 or https://ntfy.sh">
+          </div>
+          <div class="form-group">
+            <label for="ntfyTopic">ntfy Topic Name</label>
+            <input type="text" id="ntfyTopic" placeholder="timetrax-alerts">
+          </div>
+          <div class="form-group">
+            <label for="ntfyAuthToken">Auth Token (Optional for Private ntfy)</label>
+            <input type="password" id="ntfyAuthToken" placeholder="tk_...">
+          </div>
+
+          <div class="checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="enableClockInWebhooks" checked>
+              Trigger Webhook on Clock In (Priority 4 - High)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="enableClockOutWebhooks" checked>
+              Trigger Webhook on Clock Out (Priority 3 - Default)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="enableBreakWebhooks" checked>
+              Trigger Webhook on Break Toggle (Priority 3)
+            </label>
+          </div>
+
+          <div class="btn-group">
+            <button type="submit" class="btn btn-primary">
+              <i data-lucide="save"></i> Save Settings
+            </button>
+            <button type="button" id="btnTestWebhook" class="btn btn-secondary">
+              <i data-lucide="send"></i> Test Webhook
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ACTIVITY LOGS CARD -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <i data-lucide="history" style="color: #ec4899;"></i>
+          Recent Activity Logs
+        </div>
+        <button id="btnRefreshLogs" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+          <i data-lucide="refresh-cw"></i> Refresh
+        </button>
+      </div>
+
+      <div class="logs-table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>User</th>
+              <th>Project</th>
+              <th>Event</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody id="logsTableBody">
+            <tr>
+              <td colspan="5" style="text-align: center; color: var(--text-muted);">Loading activity logs...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast">
+    <i id="toastIcon" data-lucide="check-circle" style="color: var(--success);"></i>
+    <span id="toastMessage">Action completed successfully</span>
+  </div>
+
+  <script>
+    let timerInterval = null;
+    let clockInTimestamp = null;
+    let totalBreakMs = 0;
+    let isBreakActive = false;
+    let breakStartTimestamp = null;
+
+    // Elements
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const statusBadge = document.getElementById('statusBadge');
+    const shiftDetails = document.getElementById('shiftDetails');
+    const timerDisplay = document.getElementById('timerDisplay');
+    
+    const btnClockIn = document.getElementById('btnClockIn');
+    const btnBreak = document.getElementById('btnBreak');
+    const btnClockOut = document.getElementById('btnClockOut');
+    const btnTestWebhook = document.getElementById('btnTestWebhook');
+    const btnRefreshLogs = document.getElementById('btnRefreshLogs');
+
+    const userName = document.getElementById('userName');
+    const projectName = document.getElementById('projectName');
+    const shiftNotes = document.getElementById('shiftNotes');
+
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toastMessage');
+
+    function showToast(msg, isError = false) {
+      toastMessage.textContent = msg;
+      toast.style.borderColor = isError ? 'var(--danger)' : 'var(--bg-card-border)';
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3500);
+    }
+
+    function formatTime(ms) {
+      const seconds = Math.floor((ms / 1000) % 60);
+      const minutes = Math.floor((ms / (1000 * 60)) % 60);
+      const hours = Math.floor(ms / (1000 * 60 * 60));
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    function updateTimer() {
+      if (!clockInTimestamp) {
+        timerDisplay.textContent = '00:00:00';
+        return;
+      }
+      const now = Date.now();
+      let currentBreak = 0;
+      if (isBreakActive && breakStartTimestamp) {
+        currentBreak = now - breakStartTimestamp;
+      }
+      const workedMs = Math.max(0, (now - clockInTimestamp) - totalBreakMs - currentBreak);
+      timerDisplay.textContent = formatTime(workedMs);
+    }
+
+    async function loadStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+
+        // Populate settings
+        if (data.settings) {
+          document.getElementById('ntfyServerUrl').value = data.settings.ntfyServerUrl || '';
+          document.getElementById('ntfyTopic').value = data.settings.ntfyTopic || '';
+          document.getElementById('ntfyAuthToken').value = data.settings.ntfyAuthToken || '';
+          document.getElementById('enableClockInWebhooks').checked = data.settings.enableClockInWebhooks;
+          document.getElementById('enableClockOutWebhooks').checked = data.settings.enableClockOutWebhooks;
+          document.getElementById('enableBreakWebhooks').checked = data.settings.enableBreakWebhooks;
+        }
+
+        if (data.currentShift) {
+          const shift = data.currentShift;
+          userName.value = shift.user;
+          projectName.value = shift.project;
+          clockInTimestamp = new Date(shift.clockInTime).getTime();
+          totalBreakMs = (shift.totalBreakMinutes || 0) * 60000;
+          
+          if (shift.status === 'ON_BREAK') {
+            isBreakActive = true;
+            breakStartTimestamp = new Date(shift.breakStartTime).getTime();
+            statusDot.className = 'status-dot break';
+            statusText.textContent = 'On Break';
+            statusBadge.textContent = 'On Break';
+            statusBadge.style.color = '#fbbf24';
+            btnBreak.innerHTML = '<i data-lucide="play"></i> Resume Work';
+          } else {
+            isBreakActive = false;
+            breakStartTimestamp = null;
+            statusDot.className = 'status-dot active';
+            statusText.textContent = 'Clocked In';
+            statusBadge.textContent = 'Working';
+            statusBadge.style.color = '#34d399';
+            btnBreak.innerHTML = '<i data-lucide="coffee"></i> Take Break';
+          }
+
+          shiftDetails.textContent = `${shift.user} working on ${shift.project}`;
+          btnClockIn.style.display = 'none';
+          btnBreak.style.display = 'flex';
+          btnClockOut.style.display = 'flex';
+
+          if (!timerInterval) {
+            timerInterval = setInterval(updateTimer, 1000);
+          }
+          updateTimer();
+        } else {
+          // Clocked Out
+          clockInTimestamp = null;
+          isBreakActive = false;
+          clearInterval(timerInterval);
+          timerInterval = null;
+
+          statusDot.className = 'status-dot';
+          statusText.textContent = 'Clocked Out';
+          statusBadge.textContent = 'Clocked Out';
+          statusBadge.style.color = '#94a3b8';
+          shiftDetails.textContent = 'No active shift';
+          timerDisplay.textContent = '00:00:00';
+
+          btnClockIn.style.display = 'flex';
+          btnBreak.style.display = 'none';
+          btnClockOut.style.display = 'none';
+        }
+      } catch (err) {
+        console.error('Failed to load status:', err);
+      }
+    }
+
+    async function loadLogs() {
+      try {
+        const res = await fetch('/api/logs');
+        const data = await res.json();
+        const tbody = document.getElementById('logsTableBody');
+
+        if (!data.logs || data.logs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No activity recorded yet.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.logs.map(log => `
+          <tr>
+            <td>${new Date(log.timestamp).toLocaleString()}</td>
+            <td><strong>${log.user}</strong></td>
+            <td>${log.project}</td>
+            <td><span class="event-pill ${log.type}">${log.type.replace('_', ' ')}</span></td>
+            <td>${log.details}</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error('Failed to load logs:', err);
+      }
+    }
+
+    // Handlers
+    btnClockIn.addEventListener('click', async () => {
+      const res = await fetch('/api/clock-in', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user: userName.value || 'Employee',
+          project: projectName.value || 'General Tasks',
+          notes: shiftNotes.value
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('⏰ Clocked in! ntfy webhook dispatched.');
+        loadStatus();
+        loadLogs();
+      } else {
+        showToast(data.error || 'Failed to clock in', true);
+      }
+    });
+
+    btnBreak.addEventListener('click', async () => {
+      const res = await fetch('/api/break', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message);
+        loadStatus();
+        loadLogs();
+      } else {
+        showToast(data.error || 'Break action failed', true);
+      }
+    });
+
+    btnClockOut.addEventListener('click', async () => {
+      const res = await fetch('/api/clock-out', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`🏁 Clocked out! Duration: ${data.completedShift.totalWorkedFormatted}`);
+        loadStatus();
+        loadLogs();
+      } else {
+        showToast(data.error || 'Failed to clock out', true);
+      }
+    });
+
+    document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        ntfyServerUrl: document.getElementById('ntfyServerUrl').value,
+        ntfyTopic: document.getElementById('ntfyTopic').value,
+        ntfyAuthToken: document.getElementById('ntfyAuthToken').value,
+        enableClockInWebhooks: document.getElementById('enableClockInWebhooks').checked,
+        enableClockOutWebhooks: document.getElementById('enableClockOutWebhooks').checked,
+        enableBreakWebhooks: document.getElementById('enableBreakWebhooks').checked
+      };
+
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        showToast('⚙️ Webhook settings saved!');
+      }
+    });
+
+    btnTestWebhook.addEventListener('click', async () => {
+      showToast('Sending test notification to ntfy...');
+      const res = await fetch('/api/webhook/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customTopic: document.getElementById('ntfyTopic').value
+        })
+      });
+      const data = await res.json();
+      if (data.details && data.details.success) {
+        showToast(`✅ Webhook delivered to ${data.details.endpoint}!`);
+      } else {
+        showToast(`❌ Webhook error: ${data.details?.error || 'Unknown error'}`, true);
+      }
+    });
+
+    btnRefreshLogs.addEventListener('click', loadLogs);
+
+    // Initialize
+    loadStatus();
+    loadLogs();
+    lucide.createIcons();
+  </script>
+</body>
+</html>

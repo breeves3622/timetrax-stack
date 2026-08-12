@@ -1,120 +1,122 @@
-# 🎬 TorBox Netflix-Style Media Stack
+# ⏱️ TimeTrax Host with ntfy Push Webhooks
 
-A production-ready, zero-local-storage **Netflix-style cloud media server** deployed via **Portainer Stacks** (Docker Compose). Powered by **TorBox** debrid, **Riven**, **Jellyfin**, and **Jellyseerr**.
+A production-ready, containerized **TimeTrax Host Application** with real-time **ntfy push notification webhooks**. Track work hours, shifts, and breaks while receiving instant push alerts on mobile devices (iOS/Android) and desktop apps when status changes occur.
 
-![Jellyfin + Jellyseerr + TorBox Stack Architecture](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![TimeTrax + ntfy Stack](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![Portainer Compatible](https://img.shields.io/badge/Portainer-Stack-13BEF9?style=for-the-badge&logo=portainer&logoColor=white)
-![TorBox Debrid](https://img.shields.io/badge/TorBox-Cloud_Debrid-6C5CE7?style=for-the-badge)
+![ntfy Integration](https://img.shields.io/badge/ntfy-Push_Notifications-3B82F6?style=for-the-badge)
 
 ---
 
 ## 🌟 Key Features
 
-- 🍿 **Zero Local Storage**: Movies and TV shows stream directly from TorBox cloud cache via virtual filesystem (VFS/FUSE).
-- 📺 **Netflix-Style UI**: Watch on web browsers, Smart TVs (FireStick, Roku, Apple TV, Android TV), iOS, and Android using **Jellyfin**.
-- 🔍 **Discovery & Requests**: Search trending releases, cast recommendations, and request content in 1 click using **Jellyseerr**.
-- ⚡ **Automated Scrapers**: **Riven** automatically queries scrapers (Torrentio, Comet, KnightCrawler) to fetch cached streams instantly from TorBox.
-- 🐳 **Portainer Native**: Deployable directly via Portainer Stacks (Git Repo or Web Editor).
+- ⏰ **Interactive Time Tracker**: Clock in, clock out, toggle breaks, and track shift durations in real time.
+- 🔔 **Instant ntfy Webhooks**: Dispatches HTTP POST webhooks to ntfy on every status event (Clock In, Clock Out, Break Start, Break End).
+- 📱 **Mobile & Desktop Push Alerts**: Subscribe to your ntfy topic on iOS, Android, or browser to receive alerts with priority levels and custom tags (`alarm_clock`, `coffee`, `stopwatch`).
+- 🏠 **Self-Hosted ntfy Included**: Includes a pre-configured `binwiederhier/ntfy` container in Docker Compose (or connect to `https://ntfy.sh`).
+- ⚡ **Live Webhook Tester**: Test button in the Web UI to verify endpoint delivery instantly.
+- 🐳 **Portainer & GitHub Ready**: Deployable directly as a Portainer Stack linked to your GitHub repository.
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-┌───────────────────────────────────────────────────────────┐
-│                      USER INTERFACE                       │
-│    Jellyfin (Player / UI)   │   Jellyseerr (Requests)     │
-└──────────────────────────────┬────────────────────────────┘
-                               │ Request Trigger
-                               ▼
-┌───────────────────────────────────────────────────────────┐
-│                      MEDIA ENGINE                         │
-│       Riven (Scraper Engine & Virtual File System)        │
-└──────────────────────────────┬────────────────────────────┘
-                               │ Instant Stream Fetch
-                               ▼
-┌───────────────────────────────────────────────────────────┐
-│                     CLOUD PROVIDER                        │
-│                   TorBox Debrid API                       │
-└───────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────┐
+│                   TIMETRAX HOST UI                     │
+│      Web Dashboard (http://localhost:3000)             │
+└──────────────────────────┬─────────────────────────────┘
+                           │ Clock Event / Trigger
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│               TIMETRAX HOST ENGINE                     │
+│      Node.js REST API & Webhook Dispatcher             │
+└──────────────────────────┬─────────────────────────────┘
+                           │ Outgoing HTTP POST Webhook
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│             SELF-HOSTED NTFY PUSH SERVER               │
+│         binwiederhier/ntfy (http://localhost:8080)     │
+└──────────────────────────┬─────────────────────────────┘
+                           │ Push Notification
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│                   USER DEVICES                         │
+│     ntfy Mobile App (iOS/Android) / Desktop / Web      │
+└──────────────────────────?─────────────────────────────┘
 ```
 
 ---
 
-## 🛠️ Step 1: Prepare the Host Machine
+## 🐙 Step 1: Push Code to Your GitHub Repository
 
-Run the host setup script on your Linux Docker host via SSH:
+Run the following commands in your local workspace terminal:
 
 ```bash
-# Clone the repository
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-cd YOUR_REPO_NAME
+# 1. Add all project files
+git add .
 
-# Run setup script (Installs FUSE3, creates directories, sets up mount propagation)
-sudo bash scripts/setup-host.sh
+# 2. Commit the changes
+git commit -m "Setup TimeTrax Host with self-hosted ntfy stack"
+
+# 3. Rename branch to main (if preferred)
+git branch -M main
+
+# 4. Connect your GitHub remote repository (replace with your GitHub URL)
+git remote add origin https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME.git
+
+# 5. Push to GitHub
+git push -u origin main
 ```
 
 ---
 
-## 🚀 Step 2: Deploying via Portainer
-
-You can deploy this stack in **Portainer** using **Option A (Git Repository)** or **Option B (Copy & Paste)**:
-
-### Option A: Deploy via Git Repository in Portainer (Recommended)
+## 🐳 Step 2: Deploying via Portainer Stacks
 
 1. Open **Portainer** -> **Stacks** -> **+ Add stack**.
-2. Name the stack: `torbox-media-stack`.
-3. Select **Repository** as the build method.
-4. Set **Repository URL**: `https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git`
-5. Set **Repository reference**: `refs/heads/main`
-6. Set **Compose path**: `docker-compose.yml`
-7. Under **Environment variables**, click **+ Add environment variable** and set your variables (or reference `.env`):
-   - `TORBOX_API_KEY`: Your TorBox API Key (from [TorBox Settings](https://torbox.app/settings))
-   - `SERVER_IP`: Your server's local or public IP
-   - `TZ`: `America/New_York` (or your timezone)
-8. Click **Deploy the stack**.
+2. **Name**: `timetrax-stack`.
+3. **Build Method**: Select **Repository**.
+4. **Repository Details**:
+   - **Repository URL**: `https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME.git`
+   - **Repository reference**: `refs/heads/main` (or `refs/heads/master`)
+   - **Compose path**: `docker-compose.yml`
+5. **Environment variables**:
+   Click **+ Add environment variable** for each parameter:
+   | Key | Value | Description |
+   |---|---|---|
+   | `TIMETRAX_PORT` | `3000` | Port for TimeTrax Host Web UI |
+   | `NTFY_PORT` | `8080` | Port for self-hosted ntfy Push Server |
+   | `NTFY_SERVER_URL` | `http://ntfy:8080` | Internal container URL for ntfy |
+   | `NTFY_TOPIC` | `timetrax-alerts` | Target notification topic name |
+   | `TZ` | `America/New_York` | Server timezone |
+   | `DATA_DIR` | `/opt/timetrax/data` | Host persistent directory for TimeTrax |
+   | `NTFY_DATA_DIR` | `/opt/timetrax/ntfy` | Host persistent directory for ntfy |
+
+6. Click **Deploy the stack**.
+
+> [!TIP]
+> Portainer will clone your GitHub repository, automatically build the `timetrax-host` Docker container from the `Dockerfile`, spin up the `ntfy` container, and attach them on the `timetrax-net` bridge network!
 
 ---
 
-### Option B: Deploy via Web Editor in Portainer
+## ⚙️ Step 3: Access & Configuration
 
-1. Open **Portainer** -> **Stacks** -> **+ Add stack**.
-2. Name the stack: `torbox-media-stack`.
-3. Select **Web editor**, copy the contents of [`docker-compose.yml`](docker-compose.yml), and paste them into the editor.
-4. Add environment variables under the **Environment variables** panel.
-5. Click **Deploy the stack**.
+### 1. Open TimeTrax Host UI
+Navigate to `http://<YOUR_SERVER_IP>:3000` in your web browser.
 
----
+### 2. Connect Your Mobile / Desktop ntfy App
+1. Download the **ntfy** app on your phone ([iOS App Store](https://apps.apple.com/app/ntfy/id1625396386) / [Google Play](https://play.google.com/store/apps/details?id=io.heckel.ntfy)).
+2. Tap **+ Add subscription**.
+3. Set **Server URL**: `http://<YOUR_SERVER_IP>:8080` (or `https://ntfy.sh` if using cloud ntfy).
+4. Set **Topic name**: `timetrax-alerts` (or your custom topic name configured in settings).
 
-## ⚙️ Step 3: Service Configuration
-
-Once deployed, access and configure the services in the following order:
-
-### 1. Riven Admin Interface (`http://<YOUR_SERVER_IP>:8080`)
-- **Debrid Provider**: Select **TorBox** and enter your API Key.
-- **Scrapers**: Enable **Torrentio**, **Comet**, and **KnightCrawler**.
-- **Mount Path**: Ensure it points to `/mnt/torbox/media`.
-
-### 2. Jellyfin Media Server (`http://<YOUR_SERVER_IP>:8096`)
-- Complete setup wizard and create an admin user.
-- Add Media Libraries:
-  - **Movies**: `/data/media/movies`
-  - **TV Shows**: `/data/media/tv`
-- Go to **Dashboard** -> **API Keys** -> Create an API key named `Jellyseerr`.
-
-### 3. Jellyseerr Frontend (`http://<YOUR_SERVER_IP>:5055`)
-- Sign in with Jellyfin (`http://jellyfin:8096` using your Jellyfin admin credentials).
-- Enable **Discovery Sync** for automatic Netflix-style categories.
-
----
-
-## 🔒 Remote Streaming
-
-- **Tailscale**: Install Tailscale on your host to securely stream from anywhere via `http://<tailscale-ip>:8096`.
-- **Nginx Proxy Manager / Cloudflare Tunnel**: Point your custom domain (e.g. `https://netflix.yourdomain.com`) to `http://localhost:8096`.
+### 3. Test Your Webhook Integration
+In the TimeTrax Web UI:
+1. Click **Test Webhook** under the **ntfy Webhook Settings** panel.
+2. Confirm that a push notification arrives immediately on your phone/device.
 
 ---
 
 ## 📄 License
 
-MIT License - feel free to customize and share!
+MIT License - feel free to customize and expand!
