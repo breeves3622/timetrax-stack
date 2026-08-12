@@ -20,7 +20,7 @@ until php -r "
 done
 echo "✅ Database connection established!"
 
-# Ensure PHP CLI symlink exists
+# Ensure PHP CLI symlinks exist in all standard paths
 ln -sf /usr/local/bin/php /usr/bin/php 2>/dev/null || true
 
 # Create interface symlinks for web installer and HTML5 UI
@@ -37,7 +37,7 @@ mkdir -p /var/www/storage/storage /var/www/storage/cache /var/www/storage/logs
 chown -R www-data:www-data /var/www/storage 2>/dev/null || true
 chmod -R 777 /var/www/storage 2>/dev/null || true
 
-# Force overwrite timetrex.ini.php configuration on startup
+# Generate timetrex.ini.php configuration
 INI_FILE="/var/www/html/timetrex.ini.php"
 echo "⚙️ Writing TimeTrex configuration file (timetrex.ini.php)..."
 cat <<EOF > "$INI_FILE"
@@ -83,6 +83,10 @@ ntfy_topic = ${NTFY_TOPIC:-timetrax-alerts}
 EOF
 
 chown www-data:www-data "$INI_FILE"
-cp "$INI_FILE" /var/www/html/includes/timetrex.ini.php 2>/dev/null || true
+
+# Create config symlinks in /etc/timetrex/ and /var/www/html/includes/ so CLI and Web API find it
+mkdir -p /etc/timetrex 2>/dev/null || true
+ln -sf /var/www/html/timetrex.ini.php /etc/timetrex/timetrex.ini.php 2>/dev/null || true
+ln -sf /var/www/html/timetrex.ini.php /var/www/html/includes/timetrex.ini.php 2>/dev/null || true
 
 exec "$@"
