@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxml2-dev \
     libicu-dev \
     libldap2-dev \
+    gettext \
     unzip \
     curl \
     supervisor \
@@ -28,6 +29,7 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         soap \
         intl \
         ldap \
+        gettext \
         opcache
 
 # Enable Apache ModRewrite & set ServerName
