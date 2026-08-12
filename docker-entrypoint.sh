@@ -32,17 +32,19 @@ if [ -d "/var/www/html/interface" ]; then
     fi
 fi
 
-# Ensure storage, cache, and log directories OUTSIDE web root (/var/www/html) exist & are writable
+# Ensure storage directories OUTSIDE web root (/var/www/html) exist & are writable
 mkdir -p /var/www/storage/storage /var/www/storage/cache /var/www/storage/logs
 chown -R www-data:www-data /var/www/storage 2>/dev/null || true
 chmod -R 777 /var/www/storage 2>/dev/null || true
 
-# Generate timetrex.ini.php configuration
+# Force overwrite timetrex.ini.php configuration on startup
 INI_FILE="/var/www/html/timetrex.ini.php"
 echo "⚙️ Writing TimeTrex configuration file (timetrex.ini.php)..."
 cat <<EOF > "$INI_FILE"
 [other]
 installer_enabled = TRUE
+min_free_disk_space = 0
+check_disk_space = FALSE
 
 [installer]
 enabled = TRUE
@@ -50,6 +52,8 @@ installer_enabled = TRUE
 
 [system]
 installer_enabled = TRUE
+min_free_disk_space = 0
+check_disk_space = FALSE
 
 [database]
 type = postgres
