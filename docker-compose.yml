@@ -1,47 +1,82 @@
 version: "3.8"
 
 networks:
-  timetrax-net:
-    name: timetrax-net
+  timetrex-net:
+    name: timetrex-net
     driver: bridge
 
 services:
   # ==========================================
-  # 1. TimeTrax Host Application & Webhook Engine
+  # 1. TimeTrex Community Edition Open Source Server
   # ==========================================
-  timetrax-host:
+  timetrex:
     build:
       context: .
       dockerfile: Dockerfile
-    image: timetrax-host:latest
-    container_name: timetrax-host
+    image: timetrex-community:latest
+    container_name: timetrex
     ports:
-      - "${TIMETRAX_PORT:-3000}:3000"
+      - "${TIMETREX_PORT:-8085}:80"
     environment:
-      - PORT=3000
-      - NODE_ENV=production
+      - TIMETREX_DB_HOST=timetrex-db
+      - TIMETREX_DB_PORT=5432
+      - TIMETREX_DB_NAME=${POSTGRES_DB:-timetrex}
+      - TIMETREX_DB_USER=${POSTGRES_USER:-timetrex}
+      - TIMETREX_DB_PASSWORD=${POSTGRES_PASSWORD:-timetrexpass}
+      - NTFY_SERVER_URL=${NTFY_SERVER_URL:-http://ntfy:8080}
+      - NTFY_TOPIC=${NTFY_TOPIC:-timetrax-alerts}
+      - TZ=${TZ:-America/New_York}
+    volumes:
+      - ${DATA_DIR:-/opt/timetrax/timetrex}/storage:/var/www/html/storage
+      - ${DATA_DIR:-/opt/timetrax/timetrex}/includes:/var/www/html/includes
+    networks:
+      - timetrex-net
+    depends_on:
+      - timetrex-db
+      - ntfy
+    restart: unless-stopped
+
+  # ==========================================
+  # 2. TimeTrex PostgreSQL Database
+  # ==========================================
+  timetrex-db:
+    image: postgres:15-alpine
+    container_name: timetrex-db
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-timetrex}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-timetrexpass}
+      - POSTGRES_DB=${POSTGRES_DB:-timetrex}
+      - TZ=${TZ:-America/New_York}
+    volumes:
+      - ${DATA_DIR:-/opt/timetrax/db}:/var/lib/postgresql/data
+    networks:
+      - timetrex-net
+    restart: unless-stopped
+
+  # ==========================================
+  # 3. TimeTrex to ntfy Webhook Relay Bridge
+  # ==========================================
+  timetrex-bridge:
+    build:
+      context: ./bridge
+      dockerfile: Dockerfile
+    image: timetrex-bridge:latest
+    container_name: timetrex-bridge
+    ports:
+      - "${BRIDGE_PORT:-5000}:5000"
+    environment:
+      - BRIDGE_PORT=5000
       - NTFY_SERVER_URL=${NTFY_SERVER_URL:-http://ntfy:8080}
       - NTFY_TOPIC=${NTFY_TOPIC:-timetrax-alerts}
       - NTFY_AUTH_TOKEN=${NTFY_AUTH_TOKEN:-}
-      - DEFAULT_USER=${DEFAULT_USER:-Developer}
-      - DEFAULT_PROJECT=${DEFAULT_PROJECT:-General Tasks}
-      - DEFAULT_PRIORITY=${DEFAULT_PRIORITY:-3}
-      - ENABLE_CLOCK_IN_WEBHOOKS=${ENABLE_CLOCK_IN_WEBHOOKS:-true}
-      - ENABLE_CLOCK_OUT_WEBHOOKS=${ENABLE_CLOCK_OUT_WEBHOOKS:-true}
-      - ENABLE_BREAK_WEBHOOKS=${ENABLE_BREAK_WEBHOOKS:-true}
-      - API_KEY=${API_KEY:-}
-      - DATA_DIR=/app/data
-      - TZ=${TZ:-UTC}
-    volumes:
-      - ${DATA_DIR:-/opt/timetrax/data}:/app/data
     networks:
-      - timetrax-net
+      - timetrex-net
     depends_on:
       - ntfy
     restart: unless-stopped
 
   # ==========================================
-  # 2. Self-Hosted ntfy Push Notification Server
+  # 4. Self-Hosted ntfy Push Server
   # ==========================================
   ntfy:
     image: binwiederhier/ntfy:latest
@@ -51,11 +86,11 @@ services:
     ports:
       - "${NTFY_PORT:-8080}:8080"
     environment:
-      - TZ=${TZ:-UTC}
+      - TZ=${TZ:-America/New_York}
       - NTFY_BASE_URL=${NTFY_BASE_URL:-http://localhost:8080}
     volumes:
       - ${NTFY_DATA_DIR:-/opt/timetrax/ntfy}/cache:/var/cache/ntfy
       - ${NTFY_DATA_DIR:-/opt/timetrax/ntfy}/config:/etc/ntfy
     networks:
-      - timetrax-net
+      - timetrex-net
     restart: unless-stopped

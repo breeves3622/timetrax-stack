@@ -1,16 +1,68 @@
-FROM node:20-alpine
+FROM php:8.2-apache
 
-WORKDIR /app
+# Install system dependencies & PostgreSQL development libraries
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev \
+    libpng-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
+    libzip-dev \
+    libxml2-dev \
+    libicu-dev \
+    libldap2-dev \
+    unzip \
+    curl \
+    cron \
+    supervisor \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY package*.json ./
+# Configure & Install PHP extensions required by TimeTrex
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ \
+    && docker-php-ext-install -j$(nproc) \
+        pdo \
+        pdo_pgsql \
+        pgsql \
+        gd \
+        bcmath \
+        zip \
+        soap \
+        intl \
+        ldap \
+        opcache
 
-RUN npm install --omit=dev
+# Enable Apache ModRewrite
+RUN a2enmod rewrite
 
-COPY . .
+# Configure PHP settings for TimeTrex
+RUN { \
+    echo 'memory_limit = 512M'; \
+    echo 'max_execution_time = 300'; \
+    echo 'post_max_size = 100M'; \
+    echo 'upload_max_filesize = 100M'; \
+    echo 'date.timezone = UTC'; \
+} > /usr/local/etc/php/conf.d/timetrex.ini
 
-EXPOSE 3000
+WORKDIR /var/www/html
 
-ENV PORT=3000
-ENV NODE_ENV=production
+# Download official TimeTrex Community Edition zip archive
+# TimeTrex Community Edition stable download URL
+ENV TIMETREX_VERSION=16.1.1
+ADD https://github.com/TimeTrex/TimeTrex/archive/refs/tags/v${TIMETREX_VERSION}.zip /tmp/timetrex.zip
 
-CMD ["npm", "start"]
+RUN unzip /tmp/timetrex.zip -d /tmp/ \
+    && cp -R /tmp/TimeTrex-${TIMETREX_VERSION}/* /var/www/html/ \
+    && rm -rf /tmp/timetrex* \
+    && chown -R www-data:www-data /var/www/html
+
+# Create persistent storage directories
+RUN mkdir -p /var/www/html/storage/storage && chown -R www-data:www-data /var/www/html/storage
+
+# Add entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+EXPOSE 80
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["apache2-foreground"]
