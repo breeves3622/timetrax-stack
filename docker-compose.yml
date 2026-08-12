@@ -27,7 +27,6 @@ services:
       - TZ=${TZ:-America/New_York}
     volumes:
       - ${DATA_DIR:-/opt/timetrax/timetrex}/storage:/var/www/html/storage
-      - ${DATA_DIR:-/opt/timetrax/timetrex}/includes:/var/www/html/includes
     networks:
       - timetrex-net
     depends_on:
