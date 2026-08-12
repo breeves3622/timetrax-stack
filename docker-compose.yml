@@ -55,7 +55,7 @@ services:
       dockerfile: Dockerfile
     container_name: timetrax-bridge
     ports:
-      - "${BRIDGE_PORT:-5050}:5000"
+      - "${BRIDGE_PORT:-8095}:5000"
     environment:
       - BRIDGE_PORT=5000
       - NTFY_SERVER_URL=${NTFY_SERVER_URL:-http://ntfy:8080}
