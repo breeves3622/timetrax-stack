@@ -13,6 +13,18 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Optional API Key Middleware
+const API_KEY = process.env.API_KEY || '';
+app.use('/api', (req, res, next) => {
+  if (API_KEY && req.headers['x-api-key'] !== API_KEY && req.query.apiKey !== API_KEY) {
+    // Only protect write endpoints if API_KEY is configured
+    if (['POST', 'PUT', 'DELETE'].includes(req.method)) {
+      return res.status(401).json({ error: 'Unauthorized: Invalid API Key' });
+    }
+  }
+  next();
+});
+
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -24,13 +36,15 @@ const defaultStore = {
     ntfyServerUrl: process.env.NTFY_SERVER_URL || 'http://ntfy:8080',
     ntfyTopic: process.env.NTFY_TOPIC || 'timetrax-alerts',
     ntfyAuthToken: process.env.NTFY_AUTH_TOKEN || '',
-    defaultPriority: '3',
-    enableClockInWebhooks: true,
-    enableClockOutWebhooks: true,
-    enableBreakWebhooks: true,
+    defaultPriority: process.env.DEFAULT_PRIORITY || '3',
+    defaultUser: process.env.DEFAULT_USER || 'Developer',
+    defaultProject: process.env.DEFAULT_PROJECT || 'General Tasks',
+    enableClockInWebhooks: process.env.ENABLE_CLOCK_IN_WEBHOOKS !== 'false',
+    enableClockOutWebhooks: process.env.ENABLE_CLOCK_OUT_WEBHOOKS !== 'false',
+    enableBreakWebhooks: process.env.ENABLE_BREAK_WEBHOOKS !== 'false',
     enableAlertWebhooks: true
   },
-  currentShift: null, // { id, user, project, clockInTime, breakStartTime, totalBreakMinutes, status: 'CLOCKED_IN' | 'ON_BREAK' }
+  currentShift: null,
   logs: []
 };
 
@@ -67,7 +81,6 @@ async function sendNtfyNotification({ title, message, priority, tags, actions, t
   const targetTopic = topicOverride || store.settings.ntfyTopic || 'timetrax-alerts';
   let serverUrl = store.settings.ntfyServerUrl || 'http://ntfy:8080';
   
-  // Clean trailing slash
   serverUrl = serverUrl.replace(/\/+$/, '');
   
   const targetEndpoint = `${serverUrl}/${targetTopic}`;
@@ -123,7 +136,6 @@ function formatDuration(ms) {
 
 // --- REST API ENDPOINTS ---
 
-// 1. Get current status & shift
 app.get('/api/status', (req, res) => {
   const now = Date.now();
   let shiftInfo = null;
@@ -150,13 +162,17 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// 2. Clock In
 app.post('/api/clock-in', async (req, res) => {
   if (store.currentShift) {
     return res.status(400).json({ error: 'Already clocked in!' });
   }
 
-  const { user = 'Employee', project = 'General Tasks', notes = '' } = req.body;
+  const {
+    user = store.settings.defaultUser || 'Employee',
+    project = store.settings.defaultProject || 'General Tasks',
+    notes = ''
+  } = req.body;
+
   const nowIso = new Date().toISOString();
 
   const newShift = {
@@ -184,7 +200,6 @@ app.post('/api/clock-in', async (req, res) => {
   store.logs.unshift(logEntry);
   saveStore();
 
-  // Send ntfy Webhook
   let webhookResult = null;
   if (store.settings.enableClockInWebhooks) {
     webhookResult = await sendNtfyNotification({
@@ -202,7 +217,6 @@ app.post('/api/clock-in', async (req, res) => {
   });
 });
 
-// 3. Toggle Break
 app.post('/api/break', async (req, res) => {
   if (!store.currentShift) {
     return res.status(400).json({ error: 'No active shift found.' });
@@ -214,13 +228,11 @@ app.post('/api/break', async (req, res) => {
   let msg = '';
 
   if (store.currentShift.status === 'CLOCKED_IN') {
-    // Start break
     store.currentShift.status = 'ON_BREAK';
     store.currentShift.breakStartTime = nowIso;
     actionType = 'BREAK_START';
     msg = `${store.currentShift.user} started break at ${now.toLocaleTimeString()}`;
   } else if (store.currentShift.status === 'ON_BREAK') {
-    // End break
     const breakStart = new Date(store.currentShift.breakStartTime).getTime();
     const breakMs = now.getTime() - breakStart;
     const breakMins = Math.round(breakMs / 60000);
@@ -243,13 +255,12 @@ app.post('/api/break', async (req, res) => {
   store.logs.unshift(logEntry);
   saveStore();
 
-  // Send ntfy Webhook
   let webhookResult = null;
   if (store.settings.enableBreakWebhooks) {
     webhookResult = await sendNtfyNotification({
       title: actionType === 'BREAK_START' ? `☕ Break Started: ${store.currentShift.user}` : `💪 Back To Work: ${store.currentShift.user}`,
       message: msg,
-      priority: 3,
+      priority: store.settings.defaultPriority || 3,
       tags: actionType === 'BREAK_START' ? ['coffee', 'pause_button'] : ['play_or_pause_button', 'muscle']
     });
   }
@@ -261,7 +272,6 @@ app.post('/api/break', async (req, res) => {
   });
 });
 
-// 4. Clock Out
 app.post('/api/clock-out', async (req, res) => {
   if (!store.currentShift) {
     return res.status(400).json({ error: 'No active shift to clock out from.' });
@@ -270,7 +280,6 @@ app.post('/api/clock-out', async (req, res) => {
   const now = new Date();
   const nowIso = now.toISOString();
 
-  // If on break while clocking out, close the break first
   if (store.currentShift.status === 'ON_BREAK' && store.currentShift.breakStartTime) {
     const breakStart = new Date(store.currentShift.breakStartTime).getTime();
     const breakMins = Math.round((now.getTime() - breakStart) / 60000);
@@ -303,13 +312,12 @@ app.post('/api/clock-out', async (req, res) => {
   store.currentShift = null;
   saveStore();
 
-  // Send ntfy Webhook
   let webhookResult = null;
   if (store.settings.enableClockOutWebhooks) {
     webhookResult = await sendNtfyNotification({
       title: `🏁 Shift Completed: ${completedShift.user}`,
       message: `Project: ${completedShift.project}\nDuration: ${workedFormatted}\nTotal Breaks: ${completedShift.totalBreakMinutes} min(s)`,
-      priority: 3,
+      priority: store.settings.defaultPriority || 3,
       tags: ['checkered_flag', 'stopwatch', 'red_circle']
     });
   }
@@ -321,27 +329,25 @@ app.post('/api/clock-out', async (req, res) => {
   });
 });
 
-// 5. Get activity logs
 app.get('/api/logs', (req, res) => {
   res.json({ logs: store.logs });
 });
 
-// 6. Get settings
 app.get('/api/settings', (req, res) => {
   res.json({ settings: store.settings });
 });
 
-// 7. Update settings
 app.post('/api/settings', (req, res) => {
   const {
     ntfyServerUrl,
     ntfyTopic,
     ntfyAuthToken,
     defaultPriority,
+    defaultUser,
+    defaultProject,
     enableClockInWebhooks,
     enableClockOutWebhooks,
-    enableBreakWebhooks,
-    enableAlertWebhooks
+    enableBreakWebhooks
   } = req.body;
 
   store.settings = {
@@ -350,19 +356,19 @@ app.post('/api/settings', (req, res) => {
     ...(ntfyTopic !== undefined && { ntfyTopic }),
     ...(ntfyAuthToken !== undefined && { ntfyAuthToken }),
     ...(defaultPriority !== undefined && { defaultPriority }),
+    ...(defaultUser !== undefined && { defaultUser }),
+    ...(defaultProject !== undefined && { defaultProject }),
     ...(enableClockInWebhooks !== undefined && { enableClockInWebhooks: Boolean(enableClockInWebhooks) }),
     ...(enableClockOutWebhooks !== undefined && { enableClockOutWebhooks: Boolean(enableClockOutWebhooks) }),
-    ...(enableBreakWebhooks !== undefined && { enableBreakWebhooks: Boolean(enableBreakWebhooks) }),
-    ...(enableAlertWebhooks !== undefined && { enableAlertWebhooks: Boolean(enableAlertWebhooks) })
+    ...(enableBreakWebhooks !== undefined && { enableBreakWebhooks: Boolean(enableBreakWebhooks) })
   };
 
   saveStore();
   res.json({ message: 'Settings updated successfully', settings: store.settings });
 });
 
-// 8. Test Webhook button
 app.post('/api/webhook/test', async (req, res) => {
-  const { customTopic, customUrl } = req.body;
+  const { customTopic } = req.body;
   const nowStr = new Date().toLocaleTimeString();
 
   const testResult = await sendNtfyNotification({

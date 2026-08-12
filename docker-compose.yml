@@ -23,6 +23,13 @@ services:
       - NTFY_SERVER_URL=${NTFY_SERVER_URL:-http://ntfy:8080}
       - NTFY_TOPIC=${NTFY_TOPIC:-timetrax-alerts}
       - NTFY_AUTH_TOKEN=${NTFY_AUTH_TOKEN:-}
+      - DEFAULT_USER=${DEFAULT_USER:-Developer}
+      - DEFAULT_PROJECT=${DEFAULT_PROJECT:-General Tasks}
+      - DEFAULT_PRIORITY=${DEFAULT_PRIORITY:-3}
+      - ENABLE_CLOCK_IN_WEBHOOKS=${ENABLE_CLOCK_IN_WEBHOOKS:-true}
+      - ENABLE_CLOCK_OUT_WEBHOOKS=${ENABLE_CLOCK_OUT_WEBHOOKS:-true}
+      - ENABLE_BREAK_WEBHOOKS=${ENABLE_BREAK_WEBHOOKS:-true}
+      - API_KEY=${API_KEY:-}
       - DATA_DIR=/app/data
       - TZ=${TZ:-UTC}
     volumes:
