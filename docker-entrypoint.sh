@@ -6,6 +6,27 @@ echo "🚀 Starting TimeTrex Community Edition..."
 # Set global environment variable for TimeTrex Config File
 export TIMETREX_CONFIG_FILE="/var/www/html/timetrex.ini.php"
 
+# Ensure php.ini exists at runtime so php_ini_loaded_file() is never false
+if [ ! -f "/usr/local/etc/php/php.ini" ]; then
+    echo "⚙️ Creating /usr/local/etc/php/php.ini..."
+    if [ -f "/usr/local/etc/php/php.ini-production" ]; then
+        cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini
+    else
+        touch /usr/local/etc/php/php.ini
+    fi
+    { \
+        echo 'memory_limit = 512M'; \
+        echo 'max_execution_time = 300'; \
+        echo 'post_max_size = 100M'; \
+        echo 'upload_max_filesize = 100M'; \
+        echo 'display_errors = Off'; \
+        echo 'display_startup_errors = Off'; \
+        echo 'log_errors = On'; \
+        echo 'error_reporting = E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED & ~E_WARNING'; \
+        echo 'date.timezone = UTC'; \
+    } >> /usr/local/etc/php/php.ini
+fi
+
 DB_HOST="${TIMETREX_DB_HOST:-timetrex-db}"
 DB_PORT="${TIMETREX_DB_PORT:-5432}"
 DB_NAME="${TIMETREX_DB_NAME:-timetrex}"
