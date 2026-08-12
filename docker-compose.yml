@@ -15,7 +15,7 @@ services:
       dockerfile: Dockerfile
     container_name: timetrex
     ports:
-      - "${TIMETREX_PORT:-8085}:80"
+      - "${TIMETREX_PORT:-8090}:80"
     environment:
       - TIMETREX_DB_HOST=timetrex-db
       - TIMETREX_DB_PORT=5432
