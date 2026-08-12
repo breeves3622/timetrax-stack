@@ -12,7 +12,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libldap2-dev \
     unzip \
     curl \
-    cron \
     supervisor \
     && rm -rf /var/lib/apt/lists/*
 
@@ -45,13 +44,10 @@ RUN { \
 
 WORKDIR /var/www/html
 
-# Download official TimeTrex Community Edition zip archive
-# TimeTrex Community Edition stable download URL
-ENV TIMETREX_VERSION=16.1.1
-ADD https://github.com/TimeTrex/TimeTrex/archive/refs/tags/v${TIMETREX_VERSION}.zip /tmp/timetrex.zip
-
-RUN unzip /tmp/timetrex.zip -d /tmp/ \
-    && cp -R /tmp/TimeTrex-${TIMETREX_VERSION}/* /var/www/html/ \
+# Download official TimeTrex Community Edition zip archive via curl
+RUN curl -sSL "https://github.com/aydancoskun/timetrex-community-edition/archive/refs/heads/master.zip" -o /tmp/timetrex.zip \
+    && unzip -q /tmp/timetrex.zip -d /tmp/ \
+    && cp -R /tmp/timetrex-community-edition-master/* /var/www/html/ \
     && rm -rf /tmp/timetrex* \
     && chown -R www-data:www-data /var/www/html
 
