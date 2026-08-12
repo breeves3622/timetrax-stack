@@ -3,6 +3,9 @@ FROM php:8.0-apache
 # Set TimeTrex Config File environment variable globally for Web and CLI sub-processes
 ENV TIMETREX_CONFIG_FILE=/var/www/html/timetrex.ini.php
 
+# Create valid php.ini file so php_ini_loaded_file() is never false
+RUN cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini
+
 # Install system dependencies & PostgreSQL development libraries
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
@@ -49,7 +52,7 @@ RUN { \
     echo 'log_errors = On'; \
     echo 'error_reporting = E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED & ~E_WARNING'; \
     echo 'date.timezone = UTC'; \
-} > /usr/local/etc/php/conf.d/timetrex.ini
+} >> /usr/local/etc/php/php.ini
 
 WORKDIR /var/www/html
 

@@ -74,6 +74,11 @@ cache_dir = /var/www/storage/cache
 log_dir = /var/www/storage/logs
 php_cli = /usr/local/bin/php
 
+[directories]
+storage_dir = /var/www/storage/storage
+cache_dir = /var/www/storage/cache
+log_dir = /var/www/storage/logs
+
 [cache]
 enable = TRUE
 dir = /var/www/storage/cache
