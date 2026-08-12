@@ -10,7 +10,7 @@ DB_USER="${TIMETREX_DB_USER:-timetrex}"
 DB_PASS="${TIMETREX_DB_PASSWORD:-timetrexpass}"
 
 # Wait for PostgreSQL database connection
-echo "⌛ Waiting for PostgreSQL database connection (${DB_HOST}:${DB_PORT})..."
+echo "⌛ Waiting for PostgreSQL database connection (${DB_HOST}:${DB_PORT})...."
 until php -r "
   \$conn = @pg_connect('host=${DB_HOST} port=${DB_PORT} dbname=${DB_NAME} user=${DB_USER} password=${DB_PASS}');
   if (\$conn) { exit(0); } else { exit(1); }
@@ -74,6 +74,7 @@ php_cli = /usr/local/bin/php
 [cache]
 enable = TRUE
 dir = /var/www/storage/cache
+cache_dir = /var/www/storage/cache
 
 [storage]
 enable = TRUE
@@ -103,9 +104,12 @@ EOF
 
 chown www-data:www-data "$INI_FILE"
 
-# Create config symlinks in /etc/timetrex/ and /var/www/html/includes/ so CLI and Web API find it
+# Create config symlinks across all candidate paths for Web API and CLI
 mkdir -p /etc/timetrex 2>/dev/null || true
 ln -sf /var/www/html/timetrex.ini.php /etc/timetrex/timetrex.ini.php 2>/dev/null || true
+ln -sf /var/www/html/timetrex.ini.php /etc/timetrex.ini.php 2>/dev/null || true
 ln -sf /var/www/html/timetrex.ini.php /var/www/html/includes/timetrex.ini.php 2>/dev/null || true
+ln -sf /var/www/html/timetrex.ini.php /var/www/html/interface/timetrex.ini.php 2>/dev/null || true
+ln -sf /var/www/html/timetrex.ini.php /var/www/html/interface/install/timetrex.ini.php 2>/dev/null || true
 
 exec "$@"
