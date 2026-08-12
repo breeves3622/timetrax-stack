@@ -30,8 +30,8 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         ldap \
         opcache
 
-# Enable Apache ModRewrite
-RUN a2enmod rewrite
+# Enable Apache ModRewrite & set ServerName
+RUN a2enmod rewrite && echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # Configure PHP settings for TimeTrex compatibility & error suppression
 RUN { \
