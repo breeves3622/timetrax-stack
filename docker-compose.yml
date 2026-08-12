@@ -1,64 +1,59 @@
 version: "3.8"
 
 networks:
-  timetrex-net:
-    name: timetrex-net
+  timetrax-net:
+    name: timetrax-net
     driver: bridge
 
 services:
   # ==========================================
-  # 1. TimeTrex Community Edition Open Source Server
+  # 1. Kimai Open-Source Time Clock Server
   # ==========================================
-  timetrex:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: timetrex
+  kimai:
+    image: kimai/kimai2:apache
+    container_name: kimai
     ports:
-      - "${TIMETREX_PORT:-8090}:80"
+      - "${TIMETREX_PORT:-8090}:8001"
     environment:
-      - TIMETREX_DB_HOST=timetrex-db
-      - TIMETREX_DB_PORT=5432
-      - TIMETREX_DB_NAME=${POSTGRES_DB:-timetrex}
-      - TIMETREX_DB_USER=${POSTGRES_USER:-timetrex}
-      - TIMETREX_DB_PASSWORD=${POSTGRES_PASSWORD:-timetrexpass}
-      - NTFY_SERVER_URL=${NTFY_SERVER_URL:-http://ntfy:8080}
-      - NTFY_TOPIC=${NTFY_TOPIC:-timetrax-alerts}
+      - APP_ENV=prod
+      - DATABASE_URL=mysql://${MYSQL_USER:-kimai}:${MYSQL_PASSWORD:-kimaipass}@kimai-db:3306/${MYSQL_DATABASE:-kimai}?charset=utf8mb4&serverVersion=10.11.0-MariaDB
+      - TRUSTED_HOSTS=localhost,127.0.0.1,10.80.1.55
+      - ADMINMAIL=${ADMIN_EMAIL:-admin@example.com}
+      - ADMINPASS=${ADMIN_PASSWORD:-AdminPass123!}
       - TZ=${TZ:-America/New_York}
-    volumes:
-      - ${DATA_DIR:-/opt/timetrax/timetrex}/storage:/var/www/storage
     networks:
-      - timetrex-net
+      - timetrax-net
     depends_on:
-      - timetrex-db
+      - kimai-db
       - ntfy
     restart: unless-stopped
 
   # ==========================================
-  # 2. TimeTrex PostgreSQL Database
+  # 2. MariaDB Database for Kimai
   # ==========================================
-  timetrex-db:
-    image: postgres:15-alpine
-    container_name: timetrex-db
+  kimai-db:
+    image: mariadb:10.11
+    container_name: kimai-db
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-timetrex}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-timetrexpass}
-      - POSTGRES_DB=${POSTGRES_DB:-timetrex}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-kimai}
+      - MYSQL_USER=${MYSQL_USER:-kimai}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-kimaipass}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-kimairootpass}
       - TZ=${TZ:-America/New_York}
     volumes:
-      - ${DATA_DIR:-/opt/timetrax/db}:/var/lib/postgresql/data
+      - ${DATA_DIR:-/opt/timetrax/db}:/var/lib/mysql
     networks:
-      - timetrex-net
+      - timetrax-net
     restart: unless-stopped
 
   # ==========================================
-  # 3. TimeTrex to ntfy Webhook Relay Bridge
+  # 3. TimeTrax to ntfy Webhook Relay Bridge
   # ==========================================
-  timetrex-bridge:
+  timetrax-bridge:
     build:
       context: ./bridge
       dockerfile: Dockerfile
-    container_name: timetrex-bridge
+    container_name: timetrax-bridge
     ports:
       - "${BRIDGE_PORT:-5000}:5000"
     environment:
@@ -67,7 +62,7 @@ services:
       - NTFY_TOPIC=${NTFY_TOPIC:-timetrax-alerts}
       - NTFY_AUTH_TOKEN=${NTFY_AUTH_TOKEN:-}
     networks:
-      - timetrex-net
+      - timetrax-net
     depends_on:
       - ntfy
     restart: unless-stopped
@@ -89,5 +84,5 @@ services:
       - ${NTFY_DATA_DIR:-/opt/timetrax/ntfy}/cache:/var/cache/ntfy
       - ${NTFY_DATA_DIR:-/opt/timetrax/ntfy}/config:/etc/ntfy
     networks:
-      - timetrex-net
+      - timetrax-net
     restart: unless-stopped
