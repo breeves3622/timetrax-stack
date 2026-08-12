@@ -33,13 +33,18 @@ fi
 mkdir -p /var/www/html/storage/storage /var/www/html/storage/logs
 chown -R www-data:www-data /var/www/html/storage /var/www/html/includes 2>/dev/null || true
 
-# Generate timetrex.ini.php configuration
+# Generate timetrex.ini.php configuration with [other] installer_enabled = TRUE
 INI_FILE="/var/www/html/timetrex.ini.php"
 echo "⚙️ Writing TimeTrex configuration file (timetrex.ini.php)..."
 cat <<EOF > "$INI_FILE"
+[other]
+installer_enabled = TRUE
+
 [installer]
 enabled = TRUE
+installer_enabled = TRUE
 
+[system]
 installer_enabled = TRUE
 
 [database]
@@ -57,7 +62,7 @@ storage_dir = /var/www/html/storage
 log_dir = /var/www/html/storage/logs
 
 [debug]
-production = TRUE
+production = FALSE
 enable = FALSE
 enable_display_errors = FALSE
 verbose = 0
