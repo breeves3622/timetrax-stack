@@ -14,6 +14,10 @@ services:
       context: https://github.com/webcommits/trackable.git#main
       dockerfile: Dockerfile
     container_name: trackable
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             exec gunicorn trackable.wsgi:application --bind 0.0.0.0:8000 --workers 3"
     ports:
       - "${TIMETREX_PORT:-8099}:8000"
     environment:
