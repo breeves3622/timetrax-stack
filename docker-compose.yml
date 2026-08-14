@@ -5,6 +5,12 @@ networks:
     name: timetrax-net
     driver: bridge
 
+volumes:
+  trackable_data:
+    name: trackable_data
+  trackable_media:
+    name: trackable_media
+
 services:
   # ==========================================
   # 1. Trackable Open-Source Time Tracker (Django + SQLite)
@@ -15,7 +21,9 @@ services:
       dockerfile: Dockerfile
     container_name: trackable
     command: >
-      sh -c "python manage.py migrate --noinput &&
+      sh -c "mkdir -p /app/data /app/media &&
+             chmod 777 /app/data /app/media 2>/dev/null || true &&
+             python manage.py migrate --noinput &&
              python manage.py collectstatic --noinput &&
              exec gunicorn trackable.wsgi:application --bind 0.0.0.0:8000 --workers 3"
     ports:
@@ -26,9 +34,12 @@ services:
       - DEBUG=False
       - ALLOWED_HOSTS=*
       - DISABLE_REGISTRATION=False
+      - SECURE_SSL_REDIRECT=False
+      - SESSION_COOKIE_SECURE=False
+      - CSRF_COOKIE_SECURE=False
     volumes:
-      - ${DATA_DIR:-/opt/timetrax/trackable}/data:/app/data
-      - ${DATA_DIR:-/opt/timetrax/trackable}/media:/app/media
+      - trackable_data:/app/data
+      - trackable_media:/app/media
     networks:
       - timetrax-net
     restart: unless-stopped
