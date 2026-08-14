@@ -7,47 +7,30 @@ networks:
 
 services:
   # ==========================================
-  # 1. Kimai Open-Source Time Clock Server
+  # 1. Trackable Open-Source Time Tracker (Django + SQLite)
   # ==========================================
-  kimai:
-    image: kimai/kimai2:apache
-    container_name: kimai
+  trackable:
+    build:
+      context: https://github.com/webcommits/trackable.git#main
+      dockerfile: Dockerfile
+    container_name: trackable
     ports:
-      - "${TIMETREX_PORT:-8090}:8001"
+      - "${TIMETREX_PORT:-8090}:8000"
     environment:
-      - APP_ENV=prod
-      - DATABASE_URL=mysql://${MYSQL_USER:-kimai}:${MYSQL_PASSWORD:-kimaipass}@kimai-db:3306/${MYSQL_DATABASE:-kimai}?charset=utf8mb4&serverVersion=10.11.0-MariaDB
-      - TRUSTED_HOSTS=.*
-      - ADMINMAIL=${ADMIN_EMAIL:-admin@example.com}
-      - ADMINPASS=${ADMIN_PASSWORD:-AdminPass123!}
-      - TZ=${TZ:-America/New_York}
-    networks:
-      - timetrax-net
-    depends_on:
-      - kimai-db
-      - ntfy
-    restart: unless-stopped
-
-  # ==========================================
-  # 2. MariaDB Database for Kimai
-  # ==========================================
-  kimai-db:
-    image: mariadb:10.11
-    container_name: kimai-db
-    environment:
-      - MYSQL_DATABASE=${MYSQL_DATABASE:-kimai}
-      - MYSQL_USER=${MYSQL_USER:-kimai}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-kimaipass}
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-kimairootpass}
-      - TZ=${TZ:-America/New_York}
+      - DJANGO_SETTINGS_MODULE=trackable.settings.prod
+      - SECRET_KEY=${SECRET_KEY:-django-insecure-trackable-secret-key-3622-production}
+      - DEBUG=False
+      - ALLOWED_HOSTS=*
+      - DISABLE_REGISTRATION=False
     volumes:
-      - ${DATA_DIR:-/opt/timetrax/db}:/var/lib/mysql
+      - ${DATA_DIR:-/opt/timetrax/trackable}/data:/app/data
+      - ${DATA_DIR:-/opt/timetrax/trackable}/media:/app/media
     networks:
       - timetrax-net
     restart: unless-stopped
 
   # ==========================================
-  # 3. TimeTrax to ntfy Webhook Relay Bridge
+  # 2. TimeTrax to ntfy Webhook Relay Bridge
   # ==========================================
   timetrax-bridge:
     build:
@@ -68,7 +51,7 @@ services:
     restart: unless-stopped
 
   # ==========================================
-  # 4. Self-Hosted ntfy Push Server
+  # 3. Self-Hosted ntfy Push Server
   # ==========================================
   ntfy:
     image: binwiederhier/ntfy:latest

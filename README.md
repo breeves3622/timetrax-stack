@@ -1,38 +1,37 @@
-# ⏱️ TimeTrax Host Stack (Kimai 2 Open-Source Time Clock + ntfy Webhooks)
+# ⏱️ TimeTrax Host Stack (trackable. Open-Source Time Tracker + ntfy Webhooks)
 
-A complete, self-hosted, production-ready time clock & attendance tracking system.
-
-> **Note on OpenTimeClock vs Kimai**: OpenTimeClock is a cloud-only SaaS product without a self-hosted Docker edition. **Kimai 2** is the leading open-source, self-hosted time tracking & time clock alternative.
+A complete, self-hosted, lightweight time tracking & management system built using **trackable.** ([webcommits/trackable](https://github.com/webcommits/trackable)).
 
 ---
 
 ## 🚀 Features
 
-- **Kimai 2 Open Source Time Clock**: Modern UI, employee clock-in / clock-out, team management, timesheets, and reporting on Port `8090`.
-- **Zero-Setup Database Initialization**: Automatic database migrations and default admin user creation (`admin@example.com` / `AdminPass123!`).
+- **trackable. Open Source Time Tracker**: Modern Django + SQLite PWA time tracker with live timers, activity logs, break tracking, client PDF/CSV exports, and team management on Port `8090`.
+- **Automatic Database Persistence**: SQLite database stored cleanly in `/opt/timetrax/trackable/data`.
 - **ntfy Push Notification Server**: Self-hosted alert server on Port `8080`.
-- **TimeTrax Webhook Bridge**: Micro-service on Port `5000` forwarding punch & event webhooks to ntfy topics.
+- **TimeTrax Webhook Bridge**: Micro-service on Port `8095` forwarding alert events to ntfy topics.
 
 ---
 
 ## 🛠️ Portainer Deployment Instructions
 
-1. Go to **Portainer** -> **Stacks** -> **Add stack**.
+1. Go to **Portainer** -> **Stacks** -> **Add stack** (or update existing `timetrax-stack`).
 2. Select **Repository** and set:
    - **Repository URL**: `https://github.com/breeves3622/timetrax-stack.git`
    - **Repository Reference**: `refs/heads/main`
    - **Compose Path**: `docker-compose.yml`
-3. Click **Deploy the stack**.
+3. Check the toggle **`Re-build image`** (or **`Pull latest image and re-deploy`**).
+4. Click **Deploy the stack**.
 
 ---
 
-## 🌐 Access Points
+## 🌐 Access Points & Initial Setup
 
-| Service | Access URL | Default Credentials |
+| Service | Access URL | Initial Setup |
 | :--- | :--- | :--- |
-| **Kimai Time Clock** | `http://<YOUR_SERVER_IP>:8090` | `admin@example.com` / `AdminPass123!` |
-| **ntfy Push Server** | `http://<YOUR_SERVER_IP>:8080` | None (Open Web Panel) |
-| **Webhook Bridge** | `http://<YOUR_SERVER_IP>:5000/webhook` | HTTP POST Webhooks |
+| **trackable. Time Tracker** | `http://<YOUR_SERVER_IP>:8090` | Register your admin account on first load |
+| **ntfy Push Server** | `http://<YOUR_SERVER_IP>:8080` | Web UI Notification Panel |
+| **Webhook Bridge** | `http://<YOUR_SERVER_IP>:8095` | HTTP POST Webhooks |
 
 ---
 
@@ -40,9 +39,9 @@ A complete, self-hosted, production-ready time clock & attendance tracking syste
 
 | Variable | Default Value | Description |
 | :--- | :--- | :--- |
-| `TIMETREX_PORT` | `8090` | Host port for Kimai Time Clock Web UI |
-| `ADMIN_EMAIL` | `admin@example.com` | Kimai Admin Account Email |
-| `ADMIN_PASSWORD` | `AdminPass123!` | Kimai Admin Account Password |
+| `TIMETREX_PORT` | `8090` | Host port for trackable. Web UI |
+| `SECRET_KEY` | *(Auto-generated)* | Django Secret Encryption Key |
+| `ALLOWED_HOSTS` | `*` | Allowed domain/IP host headers |
+| `DISABLE_REGISTRATION` | `False` | Enable initial user sign-up |
 | `NTFY_PORT` | `8080` | Host port for ntfy web UI |
-| `NTFY_TOPIC` | `timetrax-alerts` | Default notification topic |
-| `BRIDGE_PORT` | `5000` | Webhook bridge port |
+| `BRIDGE_PORT` | `8095` | Webhook bridge port |
