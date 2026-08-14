@@ -15,7 +15,7 @@ services:
       dockerfile: Dockerfile
     container_name: trackable
     ports:
-      - "${TIMETREX_PORT:-8090}:8000"
+      - "${TIMETREX_PORT:-8099}:8000"
     environment:
       - DJANGO_SETTINGS_MODULE=trackable.settings.prod
       - SECRET_KEY=${SECRET_KEY:-django-insecure-trackable-secret-key-3622-production}
