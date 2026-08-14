@@ -27,7 +27,7 @@ services:
              python manage.py collectstatic --noinput &&
              exec gunicorn trackable.wsgi:application --bind 0.0.0.0:8000 --workers 3"
     ports:
-      - "${TIMETREX_PORT:-8099}:8000"
+      - "8090:8000"
     environment:
       - DJANGO_SETTINGS_MODULE=trackable.settings.prod
       - SECRET_KEY=${SECRET_KEY:-g8f93k2n1m4p5q6r7s8t9u0v1w2x3y4z5a6b7c8d9e0f1g2h3i4j5k6l7m8n9o0p}
@@ -53,7 +53,7 @@ services:
       dockerfile: Dockerfile
     container_name: timetrax-bridge
     ports:
-      - "${BRIDGE_PORT:-8095}:5000"
+      - "8095:5000"
     environment:
       - BRIDGE_PORT=5000
       - NTFY_SERVER_URL=${NTFY_SERVER_URL:-http://ntfy:8080}
@@ -74,7 +74,7 @@ services:
     command:
       - serve
     ports:
-      - "${NTFY_PORT:-8080}:8080"
+      - "8080:8080"
     environment:
       - TZ=${TZ:-America/New_York}
       - NTFY_BASE_URL=${NTFY_BASE_URL:-http://localhost:8080}
