@@ -14,9 +14,10 @@ services:
       - PORT=${POSTGRES_PORT:-5432}
       - USER=${POSTGRES_USER:-odoo}
       - PASSWORD=${POSTGRES_PASSWORD:-odoopass}
+      - ODOO_RC=/etc/odoo/odoo.conf
     volumes:
       - odoo-web-data:/var/lib/odoo
-      - ./config:/etc/odoo
+      - ./config/odoo.conf:/etc/odoo/odoo.conf
       - ./addons:/mnt/extra-addons
     restart: always
 
