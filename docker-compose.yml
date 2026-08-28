@@ -14,11 +14,10 @@ services:
       - PORT=${POSTGRES_PORT:-5432}
       - USER=${POSTGRES_USER:-odoo}
       - PASSWORD=${POSTGRES_PASSWORD:-odoopass}
-      - ODOO_RC=/etc/odoo/odoo.conf
     volumes:
       - odoo-web-data:/var/lib/odoo
-      - ./config:/etc/odoo
       - ./addons:/mnt/extra-addons
+    command: odoo --addons-path=/mnt/extra-addons,/usr/lib/python3/dist-packages/odoo/addons --workers=2 --max-cron-threads=1 --limit-memory-soft=640000000 --limit-memory-hard=800000000 --limit-time-cpu=60 --limit-time-real=120 --limit-request=8192
     restart: always
 
   db:
