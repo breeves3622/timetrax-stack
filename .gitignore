@@ -9,7 +9,6 @@ Thumbs.db
 # Persistent stack data (if cloned locally)
 data/
 cache/
-config/
 db/
 media/
 /opt/torbox-stack
