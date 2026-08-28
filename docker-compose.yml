@@ -17,7 +17,7 @@ services:
       - ODOO_RC=/etc/odoo/odoo.conf
     volumes:
       - odoo-web-data:/var/lib/odoo
-      - ./config/odoo.conf:/etc/odoo/odoo.conf
+      - ./config:/etc/odoo
       - ./addons:/mnt/extra-addons
     restart: always
 
